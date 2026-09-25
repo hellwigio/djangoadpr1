@@ -1,0 +1,76 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Показать доступные команды
+    cmds:
+      - task --list
+
+  venv:
+    desc: Создать виртуальное окружение, если его ещё нет
+    status:
+      - test -x .venv/bin/python
+    cmds:
+      - uv venv .venv
+
+  install:
+    desc: Установить зависимости через uv pip
+    cmds:
+      - task: venv
+      - uv pip install --python .venv/bin/python -r requirements.txt
+
+  setup:
+    desc: Подготовить окружение и применить миграции
+    cmds:
+      - task: install
+      - task: migrate
+
+  run:
+    desc: Запустить сервер (task run -- 127.0.0.1:8001)
+    cmds:
+      - .venv/bin/python manage.py runserver {{.CLI_ARGS}}
+
+  migrate:
+    desc: Применить миграции
+    cmds:
+      - .venv/bin/python manage.py migrate {{.CLI_ARGS}}
+
+  makemigrations:
+    desc: Создать миграции после изменения моделей
+    cmds:
+      - .venv/bin/python manage.py makemigrations {{.CLI_ARGS}}
+
+  superuser:
+    desc: Создать администратора
+    interactive: true
+    cmds:
+      - .venv/bin/python manage.py createsuperuser {{.CLI_ARGS}}
+
+  shell:
+    desc: Открыть Django shell
+    interactive: true
+    cmds:
+      - .venv/bin/python manage.py shell {{.CLI_ARGS}}
+
+  check:
+    desc: Проверить проект и отсутствие несозданных миграций
+    cmds:
+      - .venv/bin/python manage.py check
+      - .venv/bin/python manage.py makemigrations --check --dry-run
+
+  test:
+    desc: Запустить тесты (task test -- library --verbosity 2)
+    cmds:
+      - .venv/bin/python manage.py test {{.CLI_ARGS}}
+
+  verify:
+    desc: Выполнить все проверки и тесты
+    cmds:
+      - task: check
+      - task: test
+
+  manage:
+    desc: Выполнить любую команду manage.py (task manage -- showmigrations)
+    interactive: true
+    cmds:
+      - .venv/bin/python manage.py {{.CLI_ARGS}}
